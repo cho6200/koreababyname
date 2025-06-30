@@ -40,7 +40,7 @@
   </style>
 </head>
 <body>
-  <h1>✨ 아이이름못짓겠어.kr</h1>
+  <h1>✨ 아이이름못짓겠어</h1>
 
   <h2>1. 이름 입력 후 의미 분석</h2>
   <input id="name-input" placeholder="이름을 입력해주세요" />
@@ -113,16 +113,30 @@
           return;
         }
 
-        const filteredNames = data.names.filter(line =>
-          line.includes("–") || line.includes("-") || line.includes(":")
-        );
+        const seen = new Set();
+        const filteredNames = data.names.filter(line => {
+          if (!(line.includes("–") || line.includes("-") || line.includes(":"))) return false;
+          const [titleRaw] = line.split(/–|-|:/);
+          const title = titleRaw.trim();
+          if (seen.has(title)) return false;
+          seen.add(title);
+          return true;
+        });
 
         const html = filteredNames.map(line => {
-          const [title, ...desc] = line.split(/–|-|:/);
+          const [titleRaw, ...descParts] = line.split(/–|-|:/);
+          let title = titleRaw.trim();
+          let desc = descParts.join("–").trim();
+
+          const match = title.match(/^(.+)\((.+)\)$/);
+          if (match && match[1] === match[2]) {
+            title = match[1]; // 중복 제거: 호수(호수) → 호수
+          }
+
           return `
             <div>
-              <span class="name-title">${title.trim()}</span>
-              <span class="name-desc">${desc.join("–").trim()}</span>
+              <span class="name-title">${title}</span>
+              <span class="name-desc">${desc || "설명 없음"}</span>
             </div>
           `;
         }).join("");
