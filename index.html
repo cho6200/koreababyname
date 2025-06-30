@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>아이 이름 순위</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; line-height: 1.6; }
+    h1 { text-align: center; }
+    select, input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    tr.highlight {
+      background-color: #ffe08a;
+      font-weight: bold;
+    }
+    #chartContainer {
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h1>아이 이름 순위</h1>
+  <div>
+    <label>연도: </label>
+    <select id="yearSelect" onchange="renderTable()"></select>
+
+    <label>성별: </label>
+    <select id="genderSelect" onchange="renderTable()">
+      <option value="남자">남자</option>
+      <option value="여자">여자</option>
+    </select>
+  </div>
+
+  <input type="text" id="searchInput" placeholder="이름을 입력하세요" oninput="highlightName(); drawChart();" />
+
+  <table id="nameTable">
+    <thead>
+      <tr>
+        <th>순위</th>
+        <th>이름</th>
+        <th>사용 수</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="chartContainer">
+    <canvas id="nameChart" width="400" height="200"></canvas>
+  </div>
+
+  <script>
+    let allData = [];
+    let chart;
+
+    Papa.parse("data.csv", {
+      download: true,
+      header: true,
+      complete: function(results) {
+        allData = results.data;
+        populateYearOptions();
+        renderTable();
+      }
+    });
+
+    function populateYearOptions() {
+      const yearSet = new Set(allData.map(d => d.year));
+      const yearSelect = document.getElementById("yearSelect");
+      yearSet.forEach(year => {
+        const option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      });
+    }
+
+    function renderTable() {
+      const year = document.getElementById("yearSelect").value;
+      const gender = document.getElementById("genderSelect").value;
+      const tbody = document.querySelector("#nameTable tbody");
+      const filtered = allData
+        .filter(d => d.year === year && d.gender === gender)
+        .sort((a, b) => b.count - a.count);
+
+      tbody.innerHTML = "";
+      filtered.forEach((item, index) => {
+        const row = `<tr><td>${index + 1}</td><td>${item.name}</td><td>${item.count}</td></tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+
+      highlightName();
+      drawChart();
+    }
+
+    function highlightName() {
+      const input = document.getElementById("searchInput").value.trim();
+      const rows = document.querySelectorAll("#nameTable tbody tr");
+
+      rows.forEach(row => {
+        row.classList.remove("highlight");
+        const name = row.cells[1].textContent;
+        if (input && name.includes(input)) {
+          row.classList.add("highlight");
+        }
+      });
+    }
+
+    function drawChart() {
+      const inputName = document.getElementById("searchInput").value.trim();
+      const gender = document.getElementById("genderSelect").value;
+      const years = [...new Set(allData.map(d => d.year))].sort();
+
+      const counts = years.map(year => {
+        const match = allData.find(d => d.year === year && d.gender === gender && d.name === inputName);
+        return match ? parseInt(match.count) : 0;
+      });
+
+      const ctx = document.getElementById("nameChart").getContext("2d");
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: years,
+          datasets: [{
+            label: inputName + ' 사용 수',
+            data: counts,
+            borderColor: 'blue',
+            fill: false,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
