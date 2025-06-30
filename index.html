@@ -18,7 +18,7 @@
       font-size: 1.1rem;
     }
     .name-desc {
-      font-weight: normal; /* 추가됨 */
+      font-weight: normal;
       color: gray;
       display: block;
       margin-bottom: 10px;
@@ -96,7 +96,10 @@
     async function fetchAndShow(style) {
       const resultBox = document.getElementById("recommend-result");
       const moreBox = document.getElementById("more-btn-box");
-      resultBox.innerHTML = "불러오는 중...";
+
+      if (requestCount === 1) {
+        resultBox.innerHTML = "불러오는 중...";
+      }
       moreBox.innerHTML = "";
 
       try {
@@ -109,10 +112,9 @@
         const data = await res.json();
         if (!res.ok || !data.names) throw new Error();
 
-        // 설명만 있는 문장 제거 (예: GPT 설명)
         const filteredNames = data.names.filter(line => line.includes("–"));
 
-        resultBox.innerHTML = filteredNames.map(line => {
+        const html = filteredNames.map(line => {
           const [title, ...desc] = line.split("–");
           return `
             <div>
@@ -121,6 +123,12 @@
             </div>
           `;
         }).join("");
+
+        if (requestCount === 1) {
+          resultBox.innerHTML = html;
+        } else {
+          resultBox.innerHTML += html;
+        }
 
         if (requestCount < 3) {
           moreBox.innerHTML = `<button onclick="loadMore()">🔁 추가 추천</button>`;
@@ -138,4 +146,3 @@
   </script>
 </body>
 </html>
-
