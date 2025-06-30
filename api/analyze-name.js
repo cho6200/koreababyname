@@ -38,8 +38,12 @@ module.exports = async function handler(req, res) {
 
     const json = await response.json();
 
+    // ✅ GPT 응답 전체 로그 출력
+    console.log("GPT 응답 전체:", JSON.stringify(json, null, 2));
+
     if (!json.choices || !json.choices[0]) {
-      return res.status(500).json({ error: "GPT 응답 오류" });
+      console.error("GPT 응답 오류:", json);
+      return res.status(500).json({ error: "GPT 응답 오류", detail: json });
     }
 
     const answer = json.choices[0].message.content.trim();
