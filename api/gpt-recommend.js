@@ -11,17 +11,17 @@ module.exports = async function handler(req, res) {
   }
 
   const prompts = {
-    soft: "부드럽고 따뜻한 인상의 한국 이름 10개를 뜻과 함께 추천해줘.",
-    strong: "강하고 힘있는 인상의 한국 이름 10개를 뜻과 함께 추천해줘.",
-    classic: "전통적인 한자 기반의 한국 이름 10개를 뜻과 함께 추천해줘.",
-    popular: "최근 한국에서 인기 있는 이름 10개와 각각의 의미를 알려줘.",
-    nature: "자연(하늘, 바다, 숲, 별 등)에서 영감을 받은 이름 10개를 의미와 함께 추천해줘.",
-    pureKorean: "순우리말 이름 10개를 추천하고 각각의 뜻도 함께 설명해줘."
+    soft: "한국에서 실제로 사용되는 부드러운 두 글자짜리 이름 10개를 추천해줘. 영어는 포함하지 말고, 각 이름의 의미와 함께 한자도 같이 알려줘. 예: 태윤 – 크고 밝은 빛처럼 성장하길 바라는 이름 (太: 클 태, 昀: 햇빛 윤)",
+    strong: "강한 인상의 한국 두 글자 이름 10개를 추천해줘. 영어 없이, 의미와 함께 한자도 같이 알려줘.",
+    classic: "전통적인 한국식 한자 이름 10개를 추천해줘. 이름은 반드시 두 글자이며, 한자 각각의 뜻도 설명해줘.",
+    popular: "최근 인기 있는 두 글자 한국 이름 10개를 추천해줘. 각 이름의 의미와 한자도 같이 알려줘.",
+    nature: "자연에서 영감을 받은 두 글자 이름 10개를 추천해줘. 예: 하늘, 바다 등. 영어 없이 이름 + 뜻 + 한자를 같이 알려줘.",
+    pureKorean: "순우리말 기반 두 글자 이름 10개를 추천해줘. 이름은 반드시 순우리말이며, 한자는 생략하고 의미만 간단히 알려줘."
   };
 
   const prompt = prompts[style];
   if (!prompt) {
-    return res.status(400).json({ error: "잘못된 스타일" });
+    return res.status(400).json({ error: "잘못된 스타일 요청입니다." });
   }
 
   try {
@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
         messages: [
-          { role: "system", content: "당신은 이름 작명 전문가입니다." },
+          { role: "system", content: "이름 작명 전문가로써 사용자에게 맞춤형 한국 이름을 추천합니다." },
           { role: "user", content: prompt }
         ],
         temperature: 0.7
@@ -46,11 +46,10 @@ module.exports = async function handler(req, res) {
 
     const lines = raw
       .split("\n")
-      .map(line => line.replace(/^\d+\.\s*|^-+\s*/, '').trim())
+      .map(line => line.replace(/^\d+\.\s*/, "").trim())
       .filter(line => line.length > 0);
 
     return res.status(200).json({ names: lines });
-
   } catch (error) {
     console.error("GPT 추천 실패:", error);
     return res.status(500).json({ error: "GPT 추천 실패" });
