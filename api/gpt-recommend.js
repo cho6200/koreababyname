@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST 요청만 허용됩니다." });
   }
@@ -45,14 +45,18 @@ export default async function handler(req, res) {
     const raw = json.choices?.[0]?.message?.content || "";
 
     const lines = raw
-      .split("\\n")
-      .map(line => line.replace(/^\\d+\\.|^-\\s*/, '').trim())
+      .split("\n")
+      .map(line => line.replace(/^\d+\.\s*|^-+\s*/, '').trim())
       .filter(line => line.length > 0);
 
     return res.status(200).json({ names: lines });
 
   } catch (error) {
-    console.error(\"GPT 추천 실패:\", error);
+    console.error("GPT 추천 실패:", error);
+    return res.status(500).json({ error: "GPT 추천 실패" });
+  }
+};
+
     return res.status(500).json({ error: \"GPT 추천 실패\" });
   }
 }
