@@ -31,13 +31,15 @@
   </div>
 
   <div class="filter-box">
-    <h2>🧠 느낌별 이름 추천</h2>
-    <button onclick="filterNamesByTag('부드러운')">💗 부드러운</button>
-    <button onclick="filterNamesByTag('강한')">🔥 강한 인상</button>
-    <button onclick="filterNamesByTag('전통적')">🏛 전통적</button>
-    <button onclick="filterNamesByTag('최근인기')">📈 최근 인기</button>
-    <button onclick="filterNamesByTag('자연')">🌿 자연 느낌</button>
+    <h2>🧠 스타일별 이름 추천</h2>
+    <button onclick="filterNamesByTag('soft')">💗 부드러운 느낌</button>
+    <button onclick="filterNamesByTag('strong')">🔥 강한 인상</button>
+    <button onclick="filterNamesByTag('classic')">🏛 전통적인 이름</button>
+    <button onclick="filterNamesByTag('popular')">📈 최근 인기</button>
+    <button onclick="filterNamesByTag('nature')">🌿 자연 기반</button>
+    <button onclick="filterNamesByTag('pureKorean')">🇰🇷 순우리말 이름</button>
     <ul id="filteredList"></ul>
+    <button id="moreButton" onclick="loadMoreFiltered()" style="display:none;">추가 추천</button>
   </div>
 
   <div class="chart-box">
@@ -62,15 +64,54 @@
 
   <script>
     const nameDB = [
-      { name: "우주", meaning: "광활한 공간, 자유롭고 확장적인 느낌", tags: ["자연", "자유", "중성"] },
-      { name: "하린", meaning: "맑고 고운 이슬처럼 깨끗한 사람", tags: ["부드러운", "자연"] },
-      { name: "태건", meaning: "크게 건강한 사람", tags: ["강한", "전통적"] },
-      { name: "지아", meaning: "지혜롭고 아름다운 사람", tags: ["부드러운", "지적인"] },
-      { name: "준혁", meaning: "준수하고 혁신적인 성격", tags: ["강한"] },
-      { name: "서윤", meaning: "부드럽고 따뜻한 느낌", tags: ["부드러운", "최근인기"] },
-      { name: "도윤", meaning: "지도력 있는 부드러운 이름", tags: ["중성", "최근인기"] },
-      { name: "하늘", meaning: "넓고 자유로운 뜻", tags: ["자연", "중성"] }
+      { name: "우주", meaning: "광활한 공간, 자유롭고 확장적인 느낌", tags: ["nature"] },
+      { name: "하린", meaning: "맑고 고운 이슬처럼 깨끗한 사람", tags: ["soft", "nature"] },
+      { name: "태건", meaning: "크게 건강한 사람", tags: ["strong", "classic"] },
+      { name: "지아", meaning: "지혜롭고 아름다운 사람", tags: ["soft"] },
+      { name: "준혁", meaning: "준수하고 혁신적인 성격", tags: ["strong"] },
+      { name: "서윤", meaning: "부드럽고 따뜻한 느낌", tags: ["soft", "popular"] },
+      { name: "도윤", meaning: "지도력 있는 부드러운 이름", tags: ["soft", "popular"] },
+      { name: "하늘", meaning: "넓고 자유로운 뜻", tags: ["nature", "pureKorean"] },
+      { name: "온유", meaning: "온화하고 부드러운 성품", tags: ["soft"] },
+      { name: "강산", meaning: "산과 강처럼 듬직한 느낌", tags: ["strong", "nature"] },
+      { name: "다온", meaning: "모든 좋은 일이 다 오기를", tags: ["pureKorean"] },
+      { name: "나래", meaning: "날개를 의미하는 순우리말", tags: ["pureKorean", "nature"] }
     ];
+
+    let currentTag = null;
+    let filterPage = 1;
+
+    function filterNamesByTag(tag) {
+      currentTag = tag;
+      filterPage = 1;
+      const result = nameDB.filter(entry => entry.tags.includes(tag));
+      const list = document.getElementById('filteredList');
+      list.innerHTML = "";
+
+      const slice = result.slice(0, 10);
+      slice.forEach(entry => {
+        const li = document.createElement('li');
+        li.innerText = `${entry.name} - ${entry.meaning}`;
+        list.appendChild(li);
+      });
+
+      document.getElementById("moreButton").style.display = result.length > 10 ? "inline-block" : "none";
+    }
+
+    function loadMoreFiltered() {
+      const result = nameDB.filter(entry => entry.tags.includes(currentTag));
+      const list = document.getElementById('filteredList');
+      filterPage++;
+      const slice = result.slice((filterPage - 1) * 10, filterPage * 10);
+      slice.forEach(entry => {
+        const li = document.createElement('li');
+        li.innerText = `${entry.name} - ${entry.meaning}`;
+        list.appendChild(li);
+      });
+      if (filterPage * 10 >= result.length) {
+        document.getElementById("moreButton").style.display = "none";
+      }
+    }
 
     async function analyzeName() {
       const name = document.getElementById('nameInput').value.trim();
@@ -115,21 +156,6 @@
       selected.forEach(name => {
         const li = document.createElement('li');
         li.innerText = `${name} - ${meanings[name]}`;
-        list.appendChild(li);
-      });
-    }
-
-    function filterNamesByTag(tag) {
-      const result = nameDB.filter(entry => entry.tags.includes(tag));
-      const list = document.getElementById('filteredList');
-      list.innerHTML = "";
-      if (result.length === 0) {
-        list.innerHTML = `<li>해당 조건에 맞는 이름이 없습니다.</li>`;
-        return;
-      }
-      result.forEach(entry => {
-        const li = document.createElement('li');
-        li.innerText = `${entry.name} - ${entry.meaning}`;
         list.appendChild(li);
       });
     }
