@@ -4,25 +4,24 @@ export default async function handler(req, res) {
   }
 
   const { style } = req.body;
-
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
   if (!OPENAI_API_KEY) {
-    return res.status(500).json({ error: "API 키가 설정되지 않았습니다." });
+    return res.status(500).json({ error: "API 키 없음" });
   }
 
-  // 스타일에 따른 프롬프트 정의
   const prompts = {
-    soft: "부드럽고 따뜻한 인상의 한국 이름 10개를 뜻과 함께 추천해줘. 예: 우주 - 광활한 공간, 자유롭고 넓은 느낌",
-    strong: "강하고 힘있는 인상의 한국 이름 10개를 뜻과 함께 추천해줘. 예: 태건 - 크고 건강한",
-    classic: "전통적인 한자 기반의 한국 이름 10개를 간단한 뜻과 함께 추천해줘.",
+    soft: "부드럽고 따뜻한 인상의 한국 이름 10개를 뜻과 함께 추천해줘.",
+    strong: "강하고 힘있는 인상의 한국 이름 10개를 뜻과 함께 추천해줘.",
+    classic: "전통적인 한자 기반의 한국 이름 10개를 뜻과 함께 추천해줘.",
     popular: "최근 한국에서 인기 있는 이름 10개와 각각의 의미를 알려줘.",
     nature: "자연(하늘, 바다, 숲, 별 등)에서 영감을 받은 이름 10개를 의미와 함께 추천해줘.",
-    pureKorean: "순우리말 이름 10개를 추천하고, 각각의 뜻도 함께 설명해줘. 예: 나래 - 날개"
+    pureKorean: "순우리말 이름 10개를 추천하고 각각의 뜻도 함께 설명해줘."
   };
 
   const prompt = prompts[style];
   if (!prompt) {
-    return res.status(400).json({ error: "잘못된 스타일 요청입니다." });
+    return res.status(400).json({ error: "잘못된 스타일" });
   }
 
   try {
@@ -45,16 +44,15 @@ export default async function handler(req, res) {
     const json = await response.json();
     const raw = json.choices?.[0]?.message?.content || "";
 
-    // 줄바꿈 또는 숫자 등으로 구분된 이름과 의미 추출
     const lines = raw
-      .split("\n")
-      .map(line => line.replace(/^\\d+\\.|^-\\s*/, "").trim())
+      .split("\\n")
+      .map(line => line.replace(/^\\d+\\.|^-\\s*/, '').trim())
       .filter(line => line.length > 0);
 
     return res.status(200).json({ names: lines });
 
   } catch (error) {
-    console.error("GPT 추천 실패:", error);
-    return res.status(500).json({ error: "GPT 추천 실패" });
+    console.error(\"GPT 추천 실패:\", error);
+    return res.status(500).json({ error: \"GPT 추천 실패\" });
   }
 }
