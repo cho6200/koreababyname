@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>아이이름못짓겠어.kr</title>
+  <title>아이이름못짓겠어</title>
   <style>
     body {
       font-family: sans-serif;
@@ -97,9 +97,7 @@
       const resultBox = document.getElementById("recommend-result");
       const moreBox = document.getElementById("more-btn-box");
 
-      if (requestCount === 1) {
-        resultBox.innerHTML = "불러오는 중...";
-      }
+      if (requestCount === 1) resultBox.innerHTML = "불러오는 중...";
       moreBox.innerHTML = "";
 
       try {
@@ -110,12 +108,17 @@
         });
 
         const data = await res.json();
-        if (!res.ok || !data.names) throw new Error();
+        if (!res.ok || !data.names || data.names.length === 0) {
+          resultBox.textContent = "추천 결과가 없습니다 🙁";
+          return;
+        }
 
-        const filteredNames = data.names.filter(line => line.includes("–"));
+        const filteredNames = data.names.filter(line =>
+          line.includes("–") || line.includes("-") || line.includes(":")
+        );
 
         const html = filteredNames.map(line => {
-          const [title, ...desc] = line.split("–");
+          const [title, ...desc] = line.split(/–|-|:/);
           return `
             <div>
               <span class="name-title">${title.trim()}</span>
@@ -134,7 +137,8 @@
           moreBox.innerHTML = `<button onclick="loadMore()">🔁 추가 추천</button>`;
         }
       } catch (err) {
-        resultBox.textContent = "서버 오류 발생";
+        resultBox.textContent = "서버 오류 발생 😢";
+        console.error(err);
       }
     }
 
