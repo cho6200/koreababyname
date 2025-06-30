@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST 요청만 허용됩니다." });
   }
@@ -9,10 +9,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "이름을 입력해주세요." });
   }
 
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;  // 🔐 환경변수에서 불러오기
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+  console.log("GPT 키 확인:", OPENAI_API_KEY ? "정상" : "없음");
+
+  if (!OPENAI_API_KEY) {
+    return res.status(500).json({ error: "API 키가 설정되지 않았습니다." });
+  }
 
   const systemPrompt = `입력된 이름의 의미를 한글로 설명해줘. 이름은 한국어 이름이며, 부드럽고 따뜻한 어감으로 1~2문장으로 설명해줘. 예: 우주 → 광활한 공간을 뜻하며 자유롭고 확장적인 느낌을 줍니다.`;
-
   const userPrompt = `이름: ${name}`;
 
   try {
@@ -20,7 +24,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}` // ✅ 키 노출 없이 사용
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
         model: "gpt-4o",
@@ -44,3 +48,5 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("GPT 호출 실패:", error);
     return res.status(500).json({ error: "서버 오류: GPT 호출 실패" });
+  }
+};
