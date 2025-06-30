@@ -1,159 +1,90 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>아이 이름 순위</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>아이이름못짓겠어.kr</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; line-height: 1.6; }
-    h1 { text-align: center; }
-    select, input[type="text"] {
-      padding: 10px;
-      font-size: 16px;
-      margin: 10px 5px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background-color: #f0f0f0;
-    }
-    tr.highlight {
-      background-color: #ffe08a;
-      font-weight: bold;
-    }
-    #chartContainer {
-      margin-top: 40px;
-    }
+    body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; background-color: #f9f9f9; }
+    h1 { color: #333; }
+    .input-box, .random-box, .chart-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    button { padding: 10px 20px; border: none; background-color: #4CAF50; color: white; border-radius: 8px; cursor: pointer; }
+    input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; width: 70%; }
+    .result { margin-top: 10px; font-weight: bold; }
+    ul { padding-left: 20px; }
   </style>
 </head>
 <body>
-  <h1>아이 이름 순위</h1>
-  <div>
-    <label>연도: </label>
-    <select id="yearSelect" onchange="renderTable()"></select>
+  <h1>👶 아이이름못짓겠어.kr</h1>
 
-    <label>성별: </label>
-    <select id="genderSelect" onchange="renderTable()">
-      <option value="남자">남자</option>
-      <option value="여자">여자</option>
-    </select>
+  <div class="input-box">
+    <h2>1. 이름 입력 후 의미 분석</h2>
+    <input type="text" id="nameInput" placeholder="예: 우주">
+    <button onclick="analyzeName()">뜻 분석</button>
+    <div class="result" id="nameResult"></div>
   </div>
 
-  <input type="text" id="searchInput" placeholder="이름을 입력하세요" oninput="highlightName(); drawChart();" />
+  <div class="random-box">
+    <h2>2. 랜덤 이름 추천</h2>
+    <button onclick="suggestNames()">랜덤 추천</button>
+    <ul id="randomList"></ul>
+  </div>
 
-  <table id="nameTable">
-    <thead>
-      <tr>
-        <th>순위</th>
-        <th>이름</th>
-        <th>사용 수</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <div id="chartContainer">
-    <canvas id="nameChart" width="400" height="200"></canvas>
+  <div class="chart-box">
+    <h2>3. 인기 순위 (2024)</h2>
+    <strong>♂ 남아 TOP 5:</strong>
+    <ol>
+      <li>이준우</li>
+      <li>김태윤</li>
+      <li>박도윤</li>
+      <li>정하람</li>
+      <li>최서준</li>
+    </ol>
+    <strong>♀ 여아 TOP 5:</strong>
+    <ol>
+      <li>서아</li>
+      <li>지우</li>
+      <li>하윤</li>
+      <li>민서</li>
+      <li>수아</li>
+    </ol>
   </div>
 
   <script>
-    let allData = [];
-    let chart;
+    const nameDB = {
+      "우주": "광활한 공간, 자유롭고 확장적인 느낌",
+      "하린": "맑고 고운 이슬처럼 깨끗한 사람",
+      "이안": "편안함, 안정을 주는 이름",
+      "서윤": "서쪽의 밝은 빛, 부드러움과 따뜻함",
+      "도윤": "길을 인도하는 사람, 지도자적 성격",
+      "지아": "지혜롭고 아름다운 사람",
+      "태율": "크게 으뜸가는 사람",
+      "예준": "예의 바르고 재능 있는 사람",
+      "하율": "맑고 부드러운 율동",
+      "하람": "하늘이 내린 뜻"
+    };
 
-    Papa.parse("data.csv", {
-      download: true,
-      header: true,
-      complete: function(results) {
-        allData = results.data;
-        populateYearOptions();
-        renderTable();
+    function analyzeName() {
+      const name = document.getElementById('nameInput').value.trim();
+      const result = nameDB[name];
+      const resultDiv = document.getElementById('nameResult');
+      if (result) {
+        resultDiv.innerText = `"${name}"의 뜻: ${result}`;
+      } else {
+        resultDiv.innerText = `"${name}"은(는) 데이터베이스에 없습니다.`;
       }
-    });
-
-    function populateYearOptions() {
-      const yearSet = new Set(allData.map(d => d.year));
-      const yearSelect = document.getElementById("yearSelect");
-      yearSet.forEach(year => {
-        const option = document.createElement("option");
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
-      });
     }
 
-    function renderTable() {
-      const year = document.getElementById("yearSelect").value;
-      const gender = document.getElementById("genderSelect").value;
-      const tbody = document.querySelector("#nameTable tbody");
-      const filtered = allData
-        .filter(d => d.year === year && d.gender === gender)
-        .sort((a, b) => b.count - a.count);
-
-      tbody.innerHTML = "";
-      filtered.forEach((item, index) => {
-        const row = `<tr><td>${index + 1}</td><td>${item.name}</td><td>${item.count}</td></tr>`;
-        tbody.insertAdjacentHTML("beforeend", row);
-      });
-
-      highlightName();
-      drawChart();
-    }
-
-    function highlightName() {
-      const input = document.getElementById("searchInput").value.trim();
-      const rows = document.querySelectorAll("#nameTable tbody tr");
-
-      rows.forEach(row => {
-        row.classList.remove("highlight");
-        const name = row.cells[1].textContent;
-        if (input && name.includes(input)) {
-          row.classList.add("highlight");
-        }
-      });
-    }
-
-    function drawChart() {
-      const inputName = document.getElementById("searchInput").value.trim();
-      const gender = document.getElementById("genderSelect").value;
-      const years = [...new Set(allData.map(d => d.year))].sort();
-
-      const counts = years.map(year => {
-        const match = allData.find(d => d.year === year && d.gender === gender && d.name === inputName);
-        return match ? parseInt(match.count) : 0;
-      });
-
-      const ctx = document.getElementById("nameChart").getContext("2d");
-      if (chart) chart.destroy();
-
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: years,
-          datasets: [{
-            label: inputName + ' 사용 수',
-            data: counts,
-            borderColor: 'blue',
-            fill: false,
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: { beginAtZero: true }
-          }
-        }
+    function suggestNames() {
+      const keys = Object.keys(nameDB);
+      const shuffled = keys.sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, 5);
+      const list = document.getElementById('randomList');
+      list.innerHTML = "";
+      selected.forEach(name => {
+        const li = document.createElement('li');
+        li.innerText = `${name} - ${nameDB[name]}`;
+        list.appendChild(li);
       });
     }
   </script>
