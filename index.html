@@ -64,16 +64,39 @@
       "하람": "하늘이 내린 뜻"
     };
 
-    function analyzeName() {
-      const name = document.getElementById('nameInput').value.trim();
-      const result = nameDB[name];
-      const resultDiv = document.getElementById('nameResult');
-      if (result) {
-        resultDiv.innerText = `"${name}"의 뜻: ${result}`;
-      } else {
-        resultDiv.innerText = `"${name}"은(는) 데이터베이스에 없습니다.`;
-      }
+async function analyzeName() {
+  const name = document.getElementById('nameInput').value.trim();
+  const resultDiv = document.getElementById('nameResult');
+
+  if (!name) {
+    resultDiv.innerText = "이름을 입력해주세요.";
+    return;
+  }
+
+  resultDiv.innerText = "뜻 분석 중... ⏳";
+
+  try {
+    const res = await fetch('/api/analyze-name', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name })
+    });
+
+    const data = await res.json();
+
+    if (data.meaning) {
+      resultDiv.innerText = `"${name}"의 뜻: ${data.meaning}`;
+    } else {
+      resultDiv.innerText = "분석 실패 😢 다시 시도해보세요.";
     }
+  } catch (error) {
+    resultDiv.innerText = "서버 오류가 발생했습니다.";
+    console.error(error);
+  }
+}
+
 
     function suggestNames() {
       const keys = Object.keys(nameDB);
