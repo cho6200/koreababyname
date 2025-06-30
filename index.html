@@ -1,123 +1,106 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>아이이름못짓겠어.kr</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; background-color: #f9f9f9; }
-    h1 { color: #333; }
-    .input-box, .random-box, .chart-box, .filter-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    button { padding: 10px 20px; border: none; background-color: #4CAF50; color: white; border-radius: 8px; cursor: pointer; margin: 4px; }
-    input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; width: 70%; }
-    .result { margin-top: 10px; font-weight: bold; }
-    ul { padding-left: 20px; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 2rem;
+    }
+    h2 {
+      margin-top: 2rem;
+    }
+    .input-box {
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 300px;
+      margin-bottom: 1rem;
+    }
+    .btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 0.5rem 1rem;
+      margin: 0.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .result-name {
+      font-weight: bold;
+      color: #000;
+    }
+    .result-meaning {
+      color: #666;
+    }
+    .result-box {
+      margin: 1rem 0;
+    }
   </style>
 </head>
 <body>
-  <h1>👶 아이이름못짓겠어.kr</h1>
+  <h1>✨ 아이이름못짓겠어.kr</h1>
 
-  <div class="input-box">
-    <h2>1. 이름 입력 후 의미 분석</h2>
-    <input type="text" id="nameInput" placeholder="예: 우주">
-    <button onclick="analyzeName()">뜻 분석</button>
-    <div class="result" id="nameResult"></div>
-  </div>
+  <h2>1. 이름 입력 후 의미 분석</h2>
+  <input type="text" id="nameInput" class="input-box" placeholder="이름을 입력해주세요" />
+  <button class="btn" onclick="analyzeName()">의미 분석</button>
+  <div id="analysisResult" class="result-box"></div>
 
-  <div class="filter-box">
-    <h2>2. 스타일별 이름 추천 (GPT 기반)</h2>
-    <button onclick="getNamesFromGPT('soft')">💗 부드러운 느낌</button>
-    <button onclick="getNamesFromGPT('strong')">🔥 강한 인상</button>
-    <button onclick="getNamesFromGPT('classic')">🏛 전통적인 이름</button>
-    <button onclick="getNamesFromGPT('popular')">📈 최근 인기</button>
-    <button onclick="getNamesFromGPT('nature')">🌿 자연 기반</button>
-    <button onclick="getNamesFromGPT('pureKorean')">🇰🇷 순우리말 이름</button>
-    <ul id="gptList"></ul>
-    <button id="retryBtn" onclick="getNamesFromGPT(currentStyle)" style="display:none;">🔁 다시 추천</button>
+  <h2>2. 스타일별 이름 추천 (GPT 기반)</h2>
+  <div>
+    <button class="btn" onclick="recommendName('soft')">💖 부드럽고 느낌</button>
+    <button class="btn" onclick="recommendName('strong')">🔥 강한 인상</button>
+    <button class="btn" onclick="recommendName('classic')">🏛️ 전통적인 이름</button>
+    <button class="btn" onclick="recommendName('popular')">🔢 최근 인기</button>
+    <button class="btn" onclick="recommendName('nature')">🌿 자연 기반</button>
+    <button class="btn" onclick="recommendName('pureKorean')">🇰 순우리말 이름</button>
   </div>
-
-  <div class="chart-box">
-    <h2>3. 인기 순위 (2024)</h2>
-    <strong>👦 남아 TOP 5:</strong>
-    <ol>
-      <li>이준우</li>
-      <li>김태윤</li>
-      <li>박도윤</li>
-      <li>정하람</li>
-      <li>최서준</li>
-    </ol>
-    <strong>👧 여아 TOP 5:</strong>
-    <ol>
-      <li>서아</li>
-      <li>지우</li>
-      <li>하윤</li>
-      <li>민서</li>
-      <li>수아</li>
-    </ol>
-  </div>
+  <div id="recommendResult" class="result-box"></div>
 
   <script>
-    let currentStyle = "";
-
-    async function getNamesFromGPT(style) {
-      currentStyle = style;
-      const list = document.getElementById("gptList");
-      const retryBtn = document.getElementById("retryBtn");
-      list.innerHTML = "<li>추천 중입니다...⏳</li>";
+    async function analyzeName() {
+      const name = document.getElementById("nameInput").value;
+      if (!name) return;
+      const resBox = document.getElementById("analysisResult");
+      resBox.innerHTML = "ㅎㅎ 살펴보는 중...";
 
       try {
-        const res = await fetch('/api/gpt-recommend', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ style })
+        const res = await fetch("/api/analyze-name", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name })
         });
         const data = await res.json();
-        if (data.names && data.names.length > 0) {
-          list.innerHTML = "";
-          data.names.forEach(line => {
-            const li = document.createElement('li');
-            li.innerText = line;
-            list.appendChild(li);
-          });
-          retryBtn.style.display = "inline-block";
+        if (data.meaning) {
+          const [title, ...desc] = data.meaning.split(/[\u2013\-]\s*/);
+          resBox.innerHTML = `<span class="result-name">\${title.trim()}</span><br><span class="result-meaning">\${desc.join(" - ").trim()}</span>`;
         } else {
-          list.innerHTML = "<li>추천 실패. 다시 시도해주세요.</li>";
+          resBox.innerHTML = "분석 실패 😞 다시 시도해보세요.";
         }
-      } catch (error) {
-        list.innerHTML = "<li>서버 오류 발생</li>";
-        console.error(error);
+      } catch {
+        resBox.innerHTML = "서버 오류 발생";
       }
     }
 
-    async function analyzeName() {
-      const name = document.getElementById('nameInput').value.trim();
-      const resultDiv = document.getElementById('nameResult');
-
-      if (!name) {
-        resultDiv.innerText = "이름을 입력해주세요.";
-        return;
-      }
-
-      resultDiv.innerText = "뜻 분석 중... ⏳";
-
+    async function recommendName(style) {
+      const resBox = document.getElementById("recommendResult");
+      resBox.innerHTML = "검색 중...";
       try {
-        const res = await fetch('/api/analyze-name', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
+        const res = await fetch("/api/gpt-recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ style })
         });
-
         const data = await res.json();
-
-        if (data.meaning) {
-          resultDiv.innerText = `"${name}"의 뜻: ${data.meaning}`;
-        } else {
-          resultDiv.innerText = "분석 실패 😢 다시 시도해보세요.";
-          console.error("서버 응답:", data);
-        }
-      } catch (error) {
-        resultDiv.innerText = "서버 오류가 발생했습니다.";
-        console.error(error);
+        if (!data.names) throw new Error();
+        resBox.innerHTML = data.names.map(line => {
+          const [title, ...desc] = line.split(/[\u2013\-]\s*/);
+          return `<div><span class="result-name">\${title.trim()}</span><br><span class="result-meaning">\${desc.join(" - ").trim()}</span></div>`;
+        }).join("<br>");
+      } catch (e) {
+        resBox.innerHTML = "서버 오류 발생";
       }
     }
   </script>
