@@ -6,37 +6,35 @@
   <title>아이이름못짓겠어.kr</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 2rem;
-    }
-    h2 {
-      margin-top: 2rem;
-    }
-    .input-box {
-      padding: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      width: 300px;
-      margin-bottom: 1rem;
-    }
-    .btn {
-      background-color: #4CAF50;
-      color: white;
-      padding: 0.5rem 1rem;
-      margin: 0.2rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .result-name {
-      font-weight: bold;
-      color: #000;
-    }
-    .result-meaning {
-      color: #666;
+      font-family: sans-serif;
+      padding: 20px;
+      line-height: 1.6;
     }
     .result-box {
-      margin: 1rem 0;
+      margin-top: 10px;
+    }
+    .name-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .name-desc {
+      color: gray;
+      display: block;
+      margin-bottom: 10px;
+    }
+    button {
+      background-color: #4caf50;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    .category {
+      margin: 5px;
     }
   </style>
 </head>
@@ -44,27 +42,27 @@
   <h1>✨ 아이이름못짓겠어.kr</h1>
 
   <h2>1. 이름 입력 후 의미 분석</h2>
-  <input type="text" id="nameInput" class="input-box" placeholder="이름을 입력해주세요" />
-  <button class="btn" onclick="analyzeName()">의미 분석</button>
-  <div id="analysisResult" class="result-box"></div>
+  <input id="name-input" placeholder="이름을 입력해주세요" />
+  <button onclick="analyzeName()">의미 분석</button>
+  <div id="meaning-result" class="result-box"></div>
 
   <h2>2. 스타일별 이름 추천 (GPT 기반)</h2>
   <div>
-    <button class="btn" onclick="recommendName('soft')">💖 부드럽고 느낌</button>
-    <button class="btn" onclick="recommendName('strong')">🔥 강한 인상</button>
-    <button class="btn" onclick="recommendName('classic')">🏛️ 전통적인 이름</button>
-    <button class="btn" onclick="recommendName('popular')">🔢 최근 인기</button>
-    <button class="btn" onclick="recommendName('nature')">🌿 자연 기반</button>
-    <button class="btn" onclick="recommendName('pureKorean')">🇰 순우리말 이름</button>
+    <button class="category" onclick="recommend('soft')">❤️ 부드러운 느낌</button>
+    <button class="category" onclick="recommend('strong')">🔥 강한 인상</button>
+    <button class="category" onclick="recommend('classic')">🏛 전통적인 이름</button>
+    <button class="category" onclick="recommend('popular')">📈 최근 인기</button>
+    <button class="category" onclick="recommend('nature')">🌿 자연 기반</button>
+    <button class="category" onclick="recommend('pureKorean')">🇰🇷 순우리말 이름</button>
   </div>
-  <div id="recommendResult" class="result-box"></div>
+  <div id="recommend-result" class="result-box"></div>
+  <div id="more-btn-box"></div>
 
   <script>
     async function analyzeName() {
-      const name = document.getElementById("nameInput").value;
-      if (!name) return;
-      const resBox = document.getElementById("analysisResult");
-      resBox.innerHTML = "ㅎㅎ 살펴보는 중...";
+      const name = document.getElementById("name-input").value.trim();
+      const resultBox = document.getElementById("meaning-result");
+      resultBox.textContent = "불러오는 중...";
 
       try {
         const res = await fetch("/api/analyze-name", {
@@ -72,36 +70,61 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name })
         });
+
         const data = await res.json();
-        if (data.meaning) {
-          const [title, ...desc] = data.meaning.split(/[\u2013\-]\s*/);
-          resBox.innerHTML = `<span class="result-name">\${title.trim()}</span><br><span class="result-meaning">\${desc.join(" - ").trim()}</span>`;
+        if (res.ok) {
+          const text = data.meaning.replaceAll("\n", "<br>");
+          resultBox.innerHTML = `<div class="name-desc">${text}</div>`;
         } else {
-          resBox.innerHTML = "분석 실패 😞 다시 시도해보세요.";
+          resultBox.textContent = "분석 실패 😥 다시 시도해주세요.";
         }
-      } catch {
-        resBox.innerHTML = "서버 오류 발생";
+      } catch (err) {
+        resultBox.textContent = "서버 오류 😢";
       }
     }
 
-    async function recommendName(style) {
-      const resBox = document.getElementById("recommendResult");
-      resBox.innerHTML = "검색 중...";
+    let currentStyle = "";
+    let requestCount = 0;
+
+    async function recommend(style) {
+      currentStyle = style;
+      requestCount = 1;
+      await fetchAndShow(style);
+    }
+
+    async function fetchAndShow(style) {
+      const resultBox = document.getElementById("recommend-result");
+      const moreBox = document.getElementById("more-btn-box");
+      resultBox.innerHTML = "불러오는 중...";
+      moreBox.innerHTML = "";
+
       try {
         const res = await fetch("/api/gpt-recommend", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ style })
         });
+
         const data = await res.json();
-        if (!data.names) throw new Error();
-        resBox.innerHTML = data.names.map(line => {
-          const [title, ...desc] = line.split(/[\u2013\-]\s*/);
-          return `<div><span class="result-name">\${title.trim()}</span><br><span class="result-meaning">\${desc.join(" - ").trim()}</span></div>`;
-        }).join("<br>");
-      } catch (e) {
-        resBox.innerHTML = "서버 오류 발생";
+        if (!res.ok) throw new Error();
+
+        resultBox.innerHTML = data.names.map(line => {
+          const [title, ...desc] = line.split("–");
+          return `<div><span class="name-title">${title.trim()}</span><span class="name-desc">${desc.join("–").trim()}</span></div>`;
+        }).join("");
+
+        if (requestCount < 3) {
+          moreBox.innerHTML = `<button onclick="loadMore()">🔁 추가 추천</button>`;
+        }
+      } catch (err) {
+        resultBox.textContent = "서버 오류 발생";
       }
+    }
+
+    async function loadMore() {
+      if (requestCount >= 3) return;
+      requestCount++;
+      await fetchAndShow(currentStyle);
     }
   </script>
 </body>
