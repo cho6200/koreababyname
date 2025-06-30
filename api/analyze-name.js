@@ -36,9 +36,12 @@ module.exports = async function handler(req, res) {
       })
     });
 
+    // ✅ 응답 상태 코드 추가 출력
+    console.log("GPT 응답 상태코드:", response.status);
+
     const json = await response.json();
 
-    // ✅ GPT 응답 전체 로그 출력
+    // ✅ 전체 GPT 응답 확인
     console.log("GPT 응답 전체:", JSON.stringify(json, null, 2));
 
     if (!json.choices || !json.choices[0]) {
@@ -50,7 +53,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ meaning: answer });
 
   } catch (error) {
-    console.error("GPT 호출 실패:", error);
-    return res.status(500).json({ error: "서버 오류: GPT 호출 실패" });
+    // ✅ 에러 상세 로그 추가
+    console.error("GPT 호출 실패:", error.message);
+    return res.status(500).json({ error: "서버 오류: GPT 호출 실패", detail: error.message });
   }
 };
