@@ -24,22 +24,16 @@
     <div class="result" id="nameResult"></div>
   </div>
 
-  <div class="random-box">
-    <h2>2. 랜덤 이름 추천</h2>
-    <button onclick="suggestNames()">랜덤 추천</button>
-    <ul id="randomList"></ul>
-  </div>
-
   <div class="filter-box">
-    <h2>🧠 스타일별 이름 추천</h2>
-    <button onclick="filterNamesByTag('soft')">💗 부드러운 느낌</button>
-    <button onclick="filterNamesByTag('strong')">🔥 강한 인상</button>
-    <button onclick="filterNamesByTag('classic')">🏛 전통적인 이름</button>
-    <button onclick="filterNamesByTag('popular')">📈 최근 인기</button>
-    <button onclick="filterNamesByTag('nature')">🌿 자연 기반</button>
-    <button onclick="filterNamesByTag('pureKorean')">🇰🇷 순우리말 이름</button>
-    <ul id="filteredList"></ul>
-    <button id="moreButton" onclick="loadMoreFiltered()" style="display:none;">추가 추천</button>
+    <h2>2. 스타일별 이름 추천 (GPT 기반)</h2>
+    <button onclick="getNamesFromGPT('soft')">💗 부드러운 느낌</button>
+    <button onclick="getNamesFromGPT('strong')">🔥 강한 인상</button>
+    <button onclick="getNamesFromGPT('classic')">🏛 전통적인 이름</button>
+    <button onclick="getNamesFromGPT('popular')">📈 최근 인기</button>
+    <button onclick="getNamesFromGPT('nature')">🌿 자연 기반</button>
+    <button onclick="getNamesFromGPT('pureKorean')">🇰🇷 순우리말 이름</button>
+    <ul id="gptList"></ul>
+    <button id="retryBtn" onclick="getNamesFromGPT(currentStyle)" style="display:none;">🔁 다시 추천</button>
   </div>
 
   <div class="chart-box">
@@ -63,53 +57,35 @@
   </div>
 
   <script>
-    const nameDB = [
-      { name: "우주", meaning: "광활한 공간, 자유롭고 확장적인 느낌", tags: ["nature"] },
-      { name: "하린", meaning: "맑고 고운 이슬처럼 깨끗한 사람", tags: ["soft", "nature"] },
-      { name: "태건", meaning: "크게 건강한 사람", tags: ["strong", "classic"] },
-      { name: "지아", meaning: "지혜롭고 아름다운 사람", tags: ["soft"] },
-      { name: "준혁", meaning: "준수하고 혁신적인 성격", tags: ["strong"] },
-      { name: "서윤", meaning: "부드럽고 따뜻한 느낌", tags: ["soft", "popular"] },
-      { name: "도윤", meaning: "지도력 있는 부드러운 이름", tags: ["soft", "popular"] },
-      { name: "하늘", meaning: "넓고 자유로운 뜻", tags: ["nature", "pureKorean"] },
-      { name: "온유", meaning: "온화하고 부드러운 성품", tags: ["soft"] },
-      { name: "강산", meaning: "산과 강처럼 듬직한 느낌", tags: ["strong", "nature"] },
-      { name: "다온", meaning: "모든 좋은 일이 다 오기를", tags: ["pureKorean"] },
-      { name: "나래", meaning: "날개를 의미하는 순우리말", tags: ["pureKorean", "nature"] }
-    ];
+    let currentStyle = "";
 
-    let currentTag = null;
-    let filterPage = 1;
+    async function getNamesFromGPT(style) {
+      currentStyle = style;
+      const list = document.getElementById("gptList");
+      const retryBtn = document.getElementById("retryBtn");
+      list.innerHTML = "<li>추천 중입니다...⏳</li>";
 
-    function filterNamesByTag(tag) {
-      currentTag = tag;
-      filterPage = 1;
-      const result = nameDB.filter(entry => entry.tags.includes(tag));
-      const list = document.getElementById('filteredList');
-      list.innerHTML = "";
-
-      const slice = result.slice(0, 10);
-      slice.forEach(entry => {
-        const li = document.createElement('li');
-        li.innerText = `${entry.name} - ${entry.meaning}`;
-        list.appendChild(li);
-      });
-
-      document.getElementById("moreButton").style.display = result.length > 10 ? "inline-block" : "none";
-    }
-
-    function loadMoreFiltered() {
-      const result = nameDB.filter(entry => entry.tags.includes(currentTag));
-      const list = document.getElementById('filteredList');
-      filterPage++;
-      const slice = result.slice((filterPage - 1) * 10, filterPage * 10);
-      slice.forEach(entry => {
-        const li = document.createElement('li');
-        li.innerText = `${entry.name} - ${entry.meaning}`;
-        list.appendChild(li);
-      });
-      if (filterPage * 10 >= result.length) {
-        document.getElementById("moreButton").style.display = "none";
+      try {
+        const res = await fetch('/api/gpt-recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ style })
+        });
+        const data = await res.json();
+        if (data.names && data.names.length > 0) {
+          list.innerHTML = "";
+          data.names.forEach(line => {
+            const li = document.createElement('li');
+            li.innerText = line;
+            list.appendChild(li);
+          });
+          retryBtn.style.display = "inline-block";
+        } else {
+          list.innerHTML = "<li>추천 실패. 다시 시도해주세요.</li>";
+        }
+      } catch (error) {
+        list.innerHTML = "<li>서버 오류 발생</li>";
+        console.error(error);
       }
     }
 
@@ -143,21 +119,6 @@
         resultDiv.innerText = "서버 오류가 발생했습니다.";
         console.error(error);
       }
-    }
-
-    function suggestNames() {
-      const names = nameDB.map(e => e.name);
-      const meanings = Object.fromEntries(nameDB.map(e => [e.name, e.meaning]));
-      const shuffled = names.sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 5);
-
-      const list = document.getElementById('randomList');
-      list.innerHTML = "";
-      selected.forEach(name => {
-        const li = document.createElement('li');
-        li.innerText = `${name} - ${meanings[name]}`;
-        list.appendChild(li);
-      });
     }
   </script>
 </body>
