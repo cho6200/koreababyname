@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>아이이름못짓겠어.kr</title>
   <style>
     body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; background-color: #f9f9f9; }
     h1 { color: #333; }
-    .input-box, .random-box, .chart-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    button { padding: 10px 20px; border: none; background-color: #4CAF50; color: white; border-radius: 8px; cursor: pointer; }
+    .input-box, .random-box, .chart-box, .filter-box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    button { padding: 10px 20px; border: none; background-color: #4CAF50; color: white; border-radius: 8px; cursor: pointer; margin: 4px; }
     input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; width: 70%; }
     .result { margin-top: 10px; font-weight: bold; }
     ul { padding-left: 20px; }
@@ -19,7 +19,7 @@
 
   <div class="input-box">
     <h2>1. 이름 입력 후 의미 분석</h2>
-    <input type="text" id="nameInput" placeholder="예: 우주" />
+    <input type="text" id="nameInput" placeholder="예: 우주">
     <button onclick="analyzeName()">뜻 분석</button>
     <div class="result" id="nameResult"></div>
   </div>
@@ -28,6 +28,16 @@
     <h2>2. 랜덤 이름 추천</h2>
     <button onclick="suggestNames()">랜덤 추천</button>
     <ul id="randomList"></ul>
+  </div>
+
+  <div class="filter-box">
+    <h2>🧠 느낌별 이름 추천</h2>
+    <button onclick="filterNamesByTag('부드러운')">💗 부드러운</button>
+    <button onclick="filterNamesByTag('강한')">🔥 강한 인상</button>
+    <button onclick="filterNamesByTag('전통적')">🏛 전통적</button>
+    <button onclick="filterNamesByTag('최근인기')">📈 최근 인기</button>
+    <button onclick="filterNamesByTag('자연')">🌿 자연 느낌</button>
+    <ul id="filteredList"></ul>
   </div>
 
   <div class="chart-box">
@@ -51,6 +61,17 @@
   </div>
 
   <script>
+    const nameDB = [
+      { name: "우주", meaning: "광활한 공간, 자유롭고 확장적인 느낌", tags: ["자연", "자유", "중성"] },
+      { name: "하린", meaning: "맑고 고운 이슬처럼 깨끗한 사람", tags: ["부드러운", "자연"] },
+      { name: "태건", meaning: "크게 건강한 사람", tags: ["강한", "전통적"] },
+      { name: "지아", meaning: "지혜롭고 아름다운 사람", tags: ["부드러운", "지적인"] },
+      { name: "준혁", meaning: "준수하고 혁신적인 성격", tags: ["강한"] },
+      { name: "서윤", meaning: "부드럽고 따뜻한 느낌", tags: ["부드러운", "최근인기"] },
+      { name: "도윤", meaning: "지도력 있는 부드러운 이름", tags: ["중성", "최근인기"] },
+      { name: "하늘", meaning: "넓고 자유로운 뜻", tags: ["자연", "중성"] }
+    ];
+
     async function analyzeName() {
       const name = document.getElementById('nameInput').value.trim();
       const resultDiv = document.getElementById('nameResult');
@@ -65,9 +86,7 @@
       try {
         const res = await fetch('/api/analyze-name', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name })
         });
 
@@ -77,6 +96,7 @@
           resultDiv.innerText = `"${name}"의 뜻: ${data.meaning}`;
         } else {
           resultDiv.innerText = "분석 실패 😢 다시 시도해보세요.";
+          console.error("서버 응답:", data);
         }
       } catch (error) {
         resultDiv.innerText = "서버 오류가 발생했습니다.";
@@ -85,20 +105,8 @@
     }
 
     function suggestNames() {
-      const names = ["우주", "하린", "이안", "서윤", "도윤", "지아", "태율", "예준", "하율", "하람"];
-      const meanings = {
-        "우주": "광활한 공간, 자유롭고 확장적인 느낌",
-        "하린": "맑고 고운 이슬처럼 깨끗한 사람",
-        "이안": "편안함, 안정을 주는 이름",
-        "서윤": "서쪽의 밝은 빛, 부드러움과 따뜻함",
-        "도윤": "길을 인도하는 사람, 지도자적 성격",
-        "지아": "지혜롭고 아름다운 사람",
-        "태율": "크게 으뜸가는 사람",
-        "예준": "예의 바르고 재능 있는 사람",
-        "하율": "맑고 부드러운 율동",
-        "하람": "하늘이 내린 뜻"
-      };
-
+      const names = nameDB.map(e => e.name);
+      const meanings = Object.fromEntries(nameDB.map(e => [e.name, e.meaning]));
       const shuffled = names.sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, 5);
 
@@ -107,6 +115,21 @@
       selected.forEach(name => {
         const li = document.createElement('li');
         li.innerText = `${name} - ${meanings[name]}`;
+        list.appendChild(li);
+      });
+    }
+
+    function filterNamesByTag(tag) {
+      const result = nameDB.filter(entry => entry.tags.includes(tag));
+      const list = document.getElementById('filteredList');
+      list.innerHTML = "";
+      if (result.length === 0) {
+        list.innerHTML = `<li>해당 조건에 맞는 이름이 없습니다.</li>`;
+        return;
+      }
+      result.forEach(entry => {
+        const li = document.createElement('li');
+        li.innerText = `${entry.name} - ${entry.meaning}`;
         list.appendChild(li);
       });
     }
